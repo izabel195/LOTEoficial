@@ -167,24 +167,27 @@
     </select>
 
     <button onclick="imprimirClienteSelecionado()">Imprimir Seleção</button>
+<!-- Tabela de registros -->
+<table id="tabelaRegistros">
+  <thead>
+    <tr>
+      <th>Cliente</th>
+      <th>Número da OS</th>
+      <th>Número da Nota Fiscal</th>
+      <th>Número do Lote</th>
+      <th>Tipo de Embalagem</th>
+      <th>Produto</th>
+      <th>Dimensão da Embalagem (LxC)</th>
+      <th>Peso Líquido (unit.)</th>
+      <th>Peso Bruto</th>
+      <th>Volume Total da Carga</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Linhas preenchidas dinamicamente pelo JS -->
+  </tbody>
+</table>
 
-    <table id="tabelaRegistros">
-      <thead>
-        <tr>
-          <th>Cliente</th>
-          <th>Número da OS</th> <!-- COLUNA ADICIONADA -->
-          <th>Número da Nota Fiscal</th>
-          <th>Tipo de Embalagem</th>
-          <th>Produto</th>
-          <th>Dimensão da Embalagem (LxC)</th>
-          <th>Peso Líquido (unit.)</th>
-          <th>Peso Bruto</th>
-          <th>Volume Total da Carga</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
 
 <script>
   const firebaseConfig = {
@@ -383,22 +386,27 @@
       });
 
       if (numeroNotaFiscal && tipoEmbalagem && produto && bobinas.length > 0) {
-        const registro = {
-          cliente,
-          numeroOS,  // campo novo salvo aqui
-          numeroNotaFiscal,
-          tipoEmbalagem,
-          produto,
-          dimensaoEmbalagem,
-          pesoLiquido,
-          pesoBruto,
-          volumeTotalCarga,
-          bobinas,
-          criadoPor: user.email,
-          data: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        promessas.push(db.collection("bobinas").add(registro));
-      }
+  const numeroLote = bobinas[0]?.lote || ""; // ✅ PEGA O PRIMEIRO LOTE
+
+  const registro = {
+    cliente,
+    numeroOS,
+    numeroNotaFiscal,
+    numeroLote,
+    tipoEmbalagem,
+    produto,
+    dimensaoEmbalagem,
+    pesoLiquido,
+    pesoBruto,
+    volumeTotalCarga,
+    numeroLote, // ✅ AGORA VAI SALVAR NO FIREBASE
+    bobinas,
+    criadoPor: user.email,
+    data: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  promessas.push(db.collection("bobinas").add(registro));
+}
+
     });
 
     if (promessas.length === 0) {
@@ -432,15 +440,18 @@
     registros.forEach(reg => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
+      
         <td>${reg.cliente}</td>
         <td>${reg.numeroOS || ""}</td> <!-- coluna nova -->
         <td>${reg.numeroNotaFiscal || ""}</td>
+        <td>${reg.numeroLote || ""}</td>
         <td>${reg.tipoEmbalagem || ""}</td>
         <td>${reg.produto}</td>
         <td>${reg.dimensaoEmbalagem || ""}</td>
         <td>${reg.pesoLiquido?.toFixed(2) || ""}</td>
         <td>${reg.pesoBruto?.toFixed(2) || ""}</td>
         <td>${reg.volumeTotalCarga || ""}</td>
+        
       `;
       tbody.appendChild(tr);
     });
@@ -528,6 +539,8 @@ function imprimirClienteSelecionado() {
             <th>Cliente</th>
             <th>Número da OS</th>
             <th>Número da Nota Fiscal</th>
+            <th>Número do Lote</th>
+
             <th>Tipo de Embalagem</th>
             <th>Produto</th>
             <th>Dimensão da Embalagem (LxC)</th>
@@ -545,6 +558,7 @@ function imprimirClienteSelecionado() {
         <td>${reg.cliente}</td>
         <td>${reg.numeroOS || ""}</td>
         <td>${reg.numeroNotaFiscal || ""}</td>
+        <td>${reg.numeroLote || ""}</td>
         <td>${reg.tipoEmbalagem || ""}</td>
         <td>${reg.produto}</td>
         <td>${reg.dimensaoEmbalagem || ""}</td>
