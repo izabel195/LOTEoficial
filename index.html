@@ -386,7 +386,7 @@
       });
 
       if (numeroNotaFiscal && tipoEmbalagem && produto && bobinas.length > 0) {
-  const numeroLote = bobinas[0]?.lote || ""; // ✅ PEGA O PRIMEIRO LOTE
+ const numeroLote = bobinas.map(b => b.lote).join(", ");
 
   const registro = {
     cliente,
