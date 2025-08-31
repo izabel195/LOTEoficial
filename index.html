@@ -3,14 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Romaneio - Remetente Fixo</title>
+  <title>Romaneio</title>
   <style>
     :root{
-      --bg:#f7f7fb; --fg:#1f2937; --muted:#6b7280; --brand:#2563eb; --card:#ffffff; --line:#e5e7eb;
+      --bg:#f7f7fb; 
+      --fg:#1f2937; 
+      --muted:#6b7280; 
+      --brand:#2563eb; 
+      --card:#ffffff; 
+      --line:#e5e7eb;
     }
     *{box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;margin:0;background:var(--bg);color:var(--fg)}
-    header{position:sticky;top:0;background:linear-gradient(180deg,#ffffff 0%,#ffffffd9 70%,#ffffff00);backdrop-filter:saturate(1.2) blur(8px);border-bottom:1px solid var(--line);z-index:5}
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+    }
+    header{
+      position:sticky;
+      top:0;
+      background:linear-gradient(180deg,#ffffff 0%,#ffffffd9 70%,#ffffff00);
+      backdrop-filter:saturate(1.2) blur(8px);
+      border-bottom:1px solid var(--line);
+      z-index:5;
+    }
     .wrap{max-width:1100px;margin:auto;padding:16px}
     h1{margin:0;font-size:clamp(18px,2.6vw,26px)}
     .grid{display:grid;gap:12px}
@@ -19,11 +36,17 @@
     .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
     @media (max-width:820px){.g2,.g3,.g4{grid-template-columns:1fr}}
     label{font-size:12px;color:var(--muted)}
-    input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--fg);font-size:14px}
+    input,select,textarea{
+      width:100%;padding:10px 12px;border:1px solid var(--line);
+      border-radius:10px;background:#fff;color:var(--fg);font-size:14px
+    }
     textarea{min-height:84px}
     .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
     .muted{color:var(--muted)}
-    .btn{appearance:none;border:1px solid transparent;border-radius:12px;padding:10px 14px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer}
+    .btn{
+      appearance:none;border:1px solid transparent;border-radius:12px;
+      padding:10px 14px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer
+    }
     .btn.secondary{background:#fff;color:var(--fg);border-color:var(--line)}
     .btn.ghost{background:transparent;color:var(--brand);border-color:var(--brand)}
     .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -34,69 +57,79 @@
     .row-actions button{margin-right:6px}
     .tags{display:flex;flex-wrap:wrap;gap:6px}
     .tag{font-size:12px;border:1px solid var(--line);padding:6px 8px;border-radius:999px;background:#fff}
+    h3{margin:16px 0 8px 0}
+    .actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+    .actions.end{justify-content:flex-end;margin-top:14px}
+    .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 
-    /* Impressão */
-    @media print{
-      header,.actions{display:none!important}
-      body{background:#fff}
-      .print-container{padding:0;margin:0}
-      .card{border:none}
-      .logo{filter:grayscale(1)}
+    /* ===== Layout impressão ===== */
+    @media print {
+      header,.actions,.no-print,#salvarRomaneio{display:none!important}
+      body{background:#fff!important;-webkit-print-color-adjust:exact!important;color-adjust:exact!important}
+      .card{box-shadow:none!important;border:1px solid #000!important;page-break-inside:avoid}
+      table,th,td{border:1px solid #000!important}
+      th{background:#f0f0f0!important;-webkit-print-color-adjust:exact!important}
+      .table-wrap{border:1px solid #000!important}
+      table{width:100%;border-collapse:collapse}
+      th,td{padding:6px;font-size:12px}
     }
   </style>
 </head>
 <body>
   <header>
     <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-      <h1>Romaneio • Remetente Fixo</h1>
+      <h1>Romaneio</h1>
       <div class="tags">
-        <span class="tag">Firebase + Firestore</span>
+        <span class="tag">Importar XML NFe</span>
         <span class="tag">Impressão</span>
+        <span class="tag">Firestore</span>
       </div>
     </div>
   </header>
 
   <main class="wrap grid" style="gap:20px">
-    <!-- ROMANEIO FORM -->
-    <section class="card">
-      <div class="grid g2">
+    <section class="card" id="card-romaneio">
+      <div class="grid g2" style="align-items:center">
         <div style="display:flex;gap:12px;align-items:center">
-          <div style="display:flex;gap:12px;align-items:center">
-            <div class="logo" id="remetenteLogo" style="width:56px;height:56px;border-radius:14px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:800">MD</div>
-            <div>
-              <select id="remetenteSelect" style="width:100%;padding:6px;font-weight:600;">
-                <option value="1">MARIA DIVINA AEROPIPA</option>
-                <option value="2">EMPRESA B</option>
-              </select>
-              <div class="muted" id="remetenteEndereco" style="font-size:13px">R. Jacirendi, 574, Anexo 582 — Tatuapé — São Paulo/SP — 03080-000</div>
-              <div class="muted" id="remetenteTel" style="font-size:13px">Tel: 11 94024-0545</div>
-            </div>
+          <div class="logo" id="remetenteLogo" style="width:56px;height:56px;border-radius:14px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:800">MD</div>
+          <div>
+            <!-- ALTERAÇÃO AQUI: value corresponde à chave do objeto empresas -->
+            <select id="remetenteSelect" style="width:100%;padding:6px;font-weight:600;">
+              <option value="">MARIA DIVINA AEROPIPA</option>
+              <option value="JPL">JPL</option>
+            </select>
+            <div class="muted" id="remetenteEndereco" style="font-size:13px">R. Jacirendi, 574, Anexo 582 — Tatuapé — São Paulo/SP — 03080-000</div>
+            <div class="muted" id="remetenteTel" style="font-size:13px">Tel: 11 94024-0545</div>
           </div>
         </div>
+        
         <div style="text-align:right">
-          <div class="muted">Remetente fixo</div>
           <div style="font-weight:700">ROMANEIO</div>
         </div>
       </div>
 
-      <div class="grid g4" style="margin-top:14px">
+      <div class="grid g4">
         <div><label>Número NFE</label><input id="nfeNumero" placeholder="000000" /></div>
         <div><label>Data NFE</label><input id="nfeData" type="date" /></div>
         <div><label>Nº Remessa</label><input id="remessaNumero" placeholder="00000" /></div>
         <div><label>Faturamento</label><input id="faturamento" placeholder="000000" /></div>
       </div>
 
-      <div class="grid g2" style="margin-top:10px">
+      <div class="grid g2">
         <div><label>Comprador</label><textarea id="comprador" placeholder="Nome, CNPJ/CPF, endereço"></textarea></div>
         <div><label>Recebedor</label><textarea id="recebedor" placeholder="Nome/Setor, endereço de entrega"></textarea></div>
       </div>
 
-      <h3 style="margin:16px 0 8px 0">Itens</h3>
-      <div class="actions" style="display:flex;gap:8px;margin-bottom:8px">
+      <h3>Itens</h3>
+      <div class="actions">
         <button class="btn" id="addItem">+ Adicionar item</button>
         <button class="btn secondary" id="clearItems">Limpar itens</button>
+        <input type="file" id="uploadXML" accept=".xml" class="no-print" />
+        <button class="btn ghost" id="printRomaneio">Imprimir</button>
+        <button class="btn" id="salvarRomaneio">Salvar no Firestore</button>
       </div>
-      <div class="table-wrap" style="overflow:auto;border:1px solid var(--line);border-radius:12px">
+
+      <div class="table-wrap">
         <table id="itensTable">
           <thead>
             <tr>
@@ -129,59 +162,32 @@
           </tfoot>
         </table>
       </div>
-
-      <div class="actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
-        <button class="btn ghost" id="printRomaneio">Imprimir</button>
-        <button class="btn" id="salvarRomaneio">Salvar no Firestore</button>
-      </div>
     </section>
 
-    <!-- LISTAGEM -->
-    <section class="card listagem">
+    <section class="card" id="lista-card">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
         <h3 style="margin:0">Romaneios Salvos</h3>
         <button class="btn secondary" id="recarregar">Recarregar</button>
       </div>
       <div style="overflow:auto;margin-top:10px">
         <table id="listaRomaneios">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>NFE</th>
-              <th>Remessa</th>
-              <th>Comprador</th>
-              <th>Recebedor</th>
-              <th>Volumes</th>
-              <th>Peso Líq.</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Resumo</th><th style="width:1%">Ação</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
     </section>
-  </main>
+   </main>
 
-  <!-- Template do item -->
+  <!-- Template item -->
   <template id="tpl-item">
-    <tr>
-      <td>
-        <select data-field="produto" style="width:100%;padding:4px 6px;">
-          <option value="">Selecione...</option>
-        </select>
-      </td>
+    <tr data-visible="yes">
+      <td><input placeholder="Produto" data-field="produto"/></td>
       <td><input placeholder="Cód" data-field="cod"/></td>
       <td><input placeholder="Descrição" data-field="descricao"/></td>
       <td><input placeholder="Lote" data-field="lote"/></td>
       <td><input placeholder="Tipo" data-field="tipo"/></td>
       <td><input type="number" min="0" step="1" value="0" data-field="volumes"/></td>
-      <td>
-        <select data-field="um">
-          <option>KG</option>
-          <option>UN</option>
-          <option>PC</option>
-        </select>
-      </td>
+      <td><select data-field="um"><option>KG</option><option>UN</option><option>PC</option></select></td>
       <td><input type="number" min="0" step="0.01" value="0" data-field="pesoLiq"/></td>
       <td><input type="number" min="0" step="0.01" value="0" data-field="pesoBruto"/></td>
       <td><input type="number" min="0" step="0.01" value="0" data-field="dimL"/></td>
@@ -193,12 +199,14 @@
       </td>
     </tr>
   </template>
-
-  <!-- Firebase SDKs e Script -->
+  <!-- Firebase SDK + App -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getFirestore, collection, addDoc, getDocs, doc, getDoc, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import { 
+      getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp 
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
+    // === SEU CONFIG (o mesmo que você enviou) ===
     const firebaseConfig = {
       apiKey: "AIzaSyCse9Zq2XdjUwN91pzNxF5pItSVR9b2fJ8",
       authDomain: "lote-de-pido.firebaseapp.com",
@@ -212,193 +220,375 @@
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
-    const state = { itens: [] };
-    const sender = { nome:'MARIA DIVINA AEROPIPA DO B F L L T', endereco:'R. Jacirendi, 574, Anexo 582 — Tatuapé — São Paulo/SP — 03080-000', telefone:'11 94024-0545' };
-
+    // Dados fixos de remetente
     const empresas = {
-      '1': { nome:'MARIA DIVINA AEROPIPA', endereco:'R. Jacirendi, 574, Anexo 582 — Tatuapé — São Paulo/SP — 03080-000', telefone:'11 94024-0545', logo:'MD' },
-      '2': { nome:'EMPRESA B', endereco:'Rua Exemplo, 123 — Centro — São Paulo/SP', telefone:'11 99999-9999', logo:'EB' }
+      'MARIA DIVINA AEROPIPA': { nome:'MARIA DIVINA AEROPIPA', endereco:'R. Jacirendi, 574, Anexo 582 — Tatuapé — São Paulo/SP — 03080-000', telefone:'11 94024-0545', logo:'MD' },
+      'JPL': { nome:'JPL', endereco:'R. Jacirendi, 574, Anexo 582 — Tatuapé — São Paulo/SP — 03080-000', telefone:'11 12345-6789', logo:'JPL' }
     };
+    
+         
+    
 
-    const remetenteSelect = document.getElementById('remetenteSelect');
-    const remetenteLogo   = document.getElementById('remetenteLogo');
-    const remetenteEndereco = document.getElementById('remetenteEndereco');
-    const remetenteTel    = document.getElementById('remetenteTel');
-
-    function atualizarRemetente(){
-      const val = remetenteSelect.value;
-      const dados = empresas[val];
-      remetenteLogo.textContent = dados.logo;
-      remetenteEndereco.textContent = dados.endereco;
-      remetenteTel.textContent = 'Tel: ' + dados.telefone;
-      sender.nome = dados.nome;
-      sender.endereco = dados.endereco;
-      sender.telefone = dados.telefone;
-    }
-
-    atualizarRemetente();
-    remetenteSelect.addEventListener('change', atualizarRemetente);
-
+    // ====== ELEMENTOS
     const els = {
+      card: document.getElementById('card-romaneio'),
+      itensTable: document.querySelector('#itensTable tbody'),
+      tplItem: document.getElementById('tpl-item'),
+      addItem: document.getElementById('addItem'),
+      clearItems: document.getElementById('clearItems'),
+      salvarRomaneio: document.getElementById('salvarRomaneio'),
+      recarregar: document.getElementById('recarregar'),
+      listaRomaneios: document.querySelector('#listaRomaneios tbody'),
       nfeNumero: document.getElementById('nfeNumero'),
       nfeData: document.getElementById('nfeData'),
       remessaNumero: document.getElementById('remessaNumero'),
       faturamento: document.getElementById('faturamento'),
       comprador: document.getElementById('comprador'),
       recebedor: document.getElementById('recebedor'),
-      itensTable: document.getElementById('itensTable'),
-      tplItem: document.getElementById('tpl-item'),
+      remetenteSelect: document.getElementById('remetenteSelect'),
+      remetenteLogo: document.getElementById('remetenteLogo'),
+      remetenteEndereco: document.getElementById('remetenteEndereco'),
+      remetenteTel: document.getElementById('remetenteTel'),
+      uploadXML: document.getElementById('uploadXML'),
+      printRomaneio: document.getElementById('printRomaneio'),
       totalVolumes: document.getElementById('totalVolumes'),
       totalLiq: document.getElementById('totalLiq'),
       totalBruto: document.getElementById('totalBruto'),
-      addItem: document.getElementById('addItem'),
-      clearItems: document.getElementById('clearItems'),
-      salvar: document.getElementById('salvarRomaneio'),
-      print: document.getElementById('printRomaneio'),
-      recarregar: document.getElementById('recarregar'),
-      listaRomaneios: document.getElementById('listaRomaneios').querySelector('tbody')
     };
 
-    const produtos = {
-      "Canudo 10x210mm": { largura:56, comprimento:25, altura:25, peso:4.000 },
-      "Canudo 10x298mm": { largura:67, comprimento:37, altura:32, peso:12.000 },
-      "Canudo 08x210mm": { largura:36, comprimento:25, altura:25, peso:3.000 },
-      "Canudo 08x110mm": { largura:36, comprimento:21, altura:24, peso:2.000 },
-      "Canudo 05x240mm": { largura:36, comprimento:22, altura:29, peso:3.000 },
-      "Canudo 05x197mm": { largura:37, comprimento:21, altura:24, peso:2.000 },
-      "Solapa 12 05x197mm": { largura:32, comprimento:15, altura:21, peso:2.000 },
-      "Solapa 22 05x197mm": { largura:30, comprimento:28, altura:21, peso:4.000 },
-      "Caixa s/ info": { largura:50.5, comprimento:37.5, altura:47, peso:null },
-      "Copo 80ml": { largura:23.5, comprimento:29.5, altura:35, peso:3.268 },
-      "Copo 100ml": { largura:32.05, comprimento:27, altura:39, peso:3.708 },
-      "Copo 220ml": { largura:37, comprimento:28, altura:39.5, peso:5.928 },
-      "Copo 300ml": { largura:40, comprimento:32.5, altura:40, peso:8.590 },
-      "Copo 400ml": { largura:37, comprimento:46, altura:51.3, peso:null },
-      "Copo 500ml": { largura:null, comprimento:null, altura:null, peso:null },
-      "Pote 100ml": { largura:35.5, comprimento:21.5, altura:38, peso:4.07 },
-      "Pote 250ml": { largura:47, comprimento:38, altura:48, peso:7.115 },
-      "Pote 590ml": { largura:50.5, comprimento:38.5, altura:33.5, peso:5.054 },
-      "Pote 920ml": { largura:null, comprimento:null, altura:null, peso:null }
-    };
-
-    function fmt(n){
-      const v = Number(n||0);
-      if (isNaN(v)) return '0';
-      const isIntLike = Number.isInteger(v);
-      return v.toLocaleString('pt-BR', {minimumFractionDigits: isIntLike?0:2, maximumFractionDigits: isIntLike?0:2});
+    // ====== FUNÇÕES DE TABELA / TOTAIS
+    function atualizarTotais(){
+      let volumes=0, liq=0, bruto=0;
+      els.itensTable.querySelectorAll('tr[data-visible="yes"]').forEach(tr=>{
+        volumes += parseFloat(tr.querySelector('[data-field="volumes"]').value)||0;
+        liq     += parseFloat(tr.querySelector('[data-field="pesoLiq"]').value)||0;
+        bruto   += parseFloat(tr.querySelector('[data-field="pesoBruto"]').value)||0;
+      });
+      els.totalVolumes.textContent = volumes;
+      els.totalLiq.textContent = liq.toFixed(2);
+      els.totalBruto.textContent = bruto.toFixed(2);
     }
 
-    function recalc(){
-      const sum = state.itens.reduce((acc,it)=>{
-        acc.vol += Number(it.volumes||0);
-        acc.liq += Number(it.pesoLiq||0);
-        acc.bru += Number(it.pesoBruto||0);
-        return acc;
-      }, {vol:0,liq:0,bru:0});
-      els.totalVolumes.textContent = sum.vol;
-      els.totalLiq.textContent = fmt(sum.liq);
-      els.totalBruto.textContent = fmt(sum.bru);
-    }
-
-    function addItem(item={}){
-      const tr = els.tplItem.content.cloneNode(true).querySelector('tr');
-      const selProduto = tr.querySelector('select[data-field="produto"]');
-      Object.keys(produtos).forEach(p => {
-        const o = document.createElement('option');
-        o.value = p; o.textContent = p;
-        selProduto.appendChild(o);
-      });
-      // Preenche com dados do item se houver
-      for (const fld in item){
-        const el = tr.querySelector(`[data-field="${fld}"]`);
-        if(el) el.value = item[fld];
-      }
-
-      selProduto.addEventListener('change', e=>{
-        const val = e.target.value;
-        const dados = produtos[val];
-        if(dados){
-          tr.querySelector('[data-field="dimL"]').value = dados.largura || 0;
-          tr.querySelector('[data-field="dimA"]').value = dados.altura || 0;
-          tr.querySelector('[data-field="dimC"]').value = dados.comprimento || 0;
-          tr.querySelector('[data-field="pesoLiq"]').value = dados.peso || 0;
-        }
-      });
-
-      tr.querySelectorAll('[data-field]').forEach(el=>{
-        el.addEventListener('input', ()=>{
-          const idx = Array.from(els.itensTable.querySelectorAll('tbody tr')).indexOf(tr);
-          state.itens[idx][el.dataset.field] = el.value;
-          recalc();
-        });
-      });
-
+    function criarItem(){
+      const clone = els.tplItem.content.cloneNode(true);
+      const tr = clone.querySelector('tr');
+      tr.querySelectorAll('input,select').forEach(inp=>{ inp.addEventListener('input', atualizarTotais); });
+      tr.querySelector('[data-action="del"]').addEventListener('click', ()=>{ tr.remove(); atualizarTotais(); });
       tr.querySelector('[data-action="dup"]').addEventListener('click', ()=>{ 
-        const idx = Array.from(els.itensTable.querySelectorAll('tbody tr')).indexOf(tr);
-        addItem({...state.itens[idx]});
-      });
-      tr.querySelector('[data-action="del"]').addEventListener('click', ()=>{ 
-        const idx = Array.from(els.itensTable.querySelectorAll('tbody tr')).indexOf(tr);
-        state.itens.splice(idx,1);
-        tr.remove();
-        recalc();
-      });
-
-      els.itensTable.querySelector('tbody').appendChild(tr);
-      state.itens.push(item);
-      recalc();
-    }
-
-    els.addItem.addEventListener('click', ()=>addItem());
-    els.clearItems.addEventListener('click', ()=>{
-      state.itens = [];
-      els.itensTable.querySelector('tbody').innerHTML = '';
-      recalc();
-    });
-
-    els.print.addEventListener('click', ()=>window.print());
-
-    els.salvar.addEventListener('click', async ()=>{
-      try{
-        const docRef = await addDoc(collection(db,'romaneios'), {
-          remetente: sender,
-          nfeNumero: els.nfeNumero.value,
-          nfeData: els.nfeData.value,
-          remessaNumero: els.remessaNumero.value,
-          faturamento: els.faturamento.value,
-          comprador: els.comprador.value,
-          recebedor: els.recebedor.value,
-          itens: state.itens,
-          createdAt: serverTimestamp()
+        const novo = criarItem();
+        // copia valores da linha
+        tr.querySelectorAll('[data-field]').forEach(i=>{
+          const f = i.dataset.field;
+          const tgt = novo.querySelector(`[data-field="${f}"]`);
+          if(tgt) tgt.value = i.value;
         });
-        alert('Salvo com sucesso! ID: '+docRef.id);
-      } catch(e){ console.error(e); alert('Erro ao salvar'); }
-    });
-
-    async function loadRomaneios(){
-      els.listaRomaneios.innerHTML = '';
-      const q = query(collection(db,'romaneios'), orderBy('createdAt','desc'));
-      const snap = await getDocs(q);
-      snap.forEach(doc=>{
-        const r = doc.data();
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${r.nfeData||''}</td>
-          <td>${r.nfeNumero||''}</td>
-          <td>${r.remessaNumero||''}</td>
-          <td>${r.comprador||''}</td>
-          <td>${r.recebedor||''}</td>
-          <td>${r.itens.reduce((a,b)=>a+Number(b.volumes||0),0)}</td>
-          <td>${fmt(r.itens.reduce((a,b)=>a+Number(b.pesoLiq||0),0))}</td>
-          <td><button class="btn secondary" onclick="alert('Visualizar ID: ${doc.id}')">Ver</button></td>
-        `;
-        els.listaRomaneios.appendChild(tr);
+        atualizarTotais();
       });
+      els.itensTable.appendChild(tr);
+      return tr;
     }
 
-    els.recarregar.addEventListener('click', loadRomaneios);
-    loadRomaneios();
+    els.addItem.addEventListener('click', ()=>criarItem());
+    els.clearItems.addEventListener('click', ()=>{ els.itensTable.innerHTML=''; atualizarTotais(); });
 
+    // ====== REMETENTE (logo/endereço/tel)
+    els.remetenteSelect.addEventListener('change', ()=>{
+      const r = empresas[els.remetenteSelect.value];
+      if(r){
+        els.remetenteLogo.textContent=r.logo;
+        els.remetenteEndereco.textContent=r.endereco;
+        els.remetenteTel.textContent='Tel: '+r.telefone;
+      }
+    });
+
+    // ====== IMPORTAÇÃO DE XML NFe
+    function tx(xml, candidates){
+      for(const sel of candidates){
+        const node = xml.querySelector(sel);
+        if(node && node.textContent) return node.textContent;
+      }
+      return '';
+    }
+
+    function parseItems(xml){
+      const dets = xml.querySelectorAll('det, infNFe > det, NFe infNFe det');
+      if(dets.length) return dets;
+      // fallback: procurar por qualquer nó chamado 'det'
+      return xml.getElementsByTagName('det');
+    }
+
+    els.uploadXML.addEventListener('change', function(e){
+      const file = e.target.files?.[0];
+      if(!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(ev.target.result, "text/xml");
+
+        // Número e data
+        els.nfeNumero.value = tx(xml, ["ide > nNF","nfeProc ide nNF","infNFe > ide > nNF"]);
+        const dhEmi = tx(xml, ["ide > dhEmi","ide > dEmi","infNFe > ide > dhEmi","infNFe > ide > dEmi"]);
+        els.nfeData.value = dhEmi ? (dhEmi.includes('T') ? dhEmi.split('T')[0] : dhEmi) : "";
+
+        // Comprador
+        const compradorNome = tx(xml, ["dest > xNome","infNFe > dest > xNome"]);
+        const compradorCNPJ = tx(xml, ["dest > CNPJ","infNFe > dest > CNPJ","dest > CPF","infNFe > dest > CPF"]);
+        const end = [
+          tx(xml, ["enderDest > xLgr","infNFe > dest > enderDest > xLgr"]),
+          tx(xml, ["enderDest > nro","infNFe > dest > enderDest > nro"]),
+          tx(xml, ["enderDest > xBairro","infNFe > dest > enderDest > xBairro"]),
+          tx(xml, ["enderDest > xMun","infNFe > dest > enderDest > xMun"]),
+          tx(xml, ["enderDest > UF","infNFe > dest > enderDest > UF"]),
+          tx(xml, ["enderDest > CEP","infNFe > dest > enderDest > CEP"])
+        ].filter(Boolean).join(", ");
+        els.comprador.value = `${compradorNome}\nCNPJ/CPF: ${compradorCNPJ}\n${end}`;
+
+        // Recebedor (se existir entrega)
+        const recebedorNome = tx(xml, ["entrega > xNome","infNFe > entrega > xNome"]);
+        els.recebedor.value = recebedorNome || "";
+
+        // Itens
+        els.itensTable.innerHTML = "";
+        const dets = parseItems(xml);
+        Array.from(dets).forEach(det=>{
+          const prod = det.querySelector('prod');
+          const tr = criarItem();
+          const xProd = prod?.querySelector('xProd')?.textContent || "";
+          const cProd = prod?.querySelector('cProd')?.textContent || "";
+          const ncm   = prod?.querySelector('NCM')?.textContent || "";
+          const qCom  = prod?.querySelector('qCom')?.textContent || "0";
+          const uCom  = prod?.querySelector('uCom')?.textContent || "UN";
+          const vProd = prod?.querySelector('vProd')?.textContent || "0";
+
+          tr.querySelector('[data-field="produto"]').value   = xProd;
+          tr.querySelector('[data-field="cod"]').value       = cProd;
+          tr.querySelector('[data-field="descricao"]').value = ncm;
+          tr.querySelector('[data-field="volumes"]').value   = qCom;
+          tr.querySelector('[data-field="um"]').value        = uCom;
+          tr.querySelector('[data-field="pesoLiq"]').value   = vProd;
+
+          // Lote e dimensões ficam para preenchimento manual
+          tr.querySelector('[data-field="lote"]').value = "";
+          tr.querySelector('[data-field="tipo"]').value = "";
+          tr.querySelector('[data-field="dimL"]').value = "";
+          tr.querySelector('[data-field="dimA"]').value = "";
+          tr.querySelector('[data-field="dimC"]').value = "";
+        });
+
+        atualizarTotais();
+        alert("XML importado com sucesso!");
+      };
+      reader.readAsText(file);
+    });
+
+    // ====== SALVAR NO FIRESTORE
+    els.salvarRomaneio.addEventListener('click', async ()=>{
+      const itens = Array.from(els.itensTable.querySelectorAll('tr')).map(tr=>{
+        const obj={};
+        tr.querySelectorAll('input, select').forEach(i=>obj[i.dataset.field]=i.value);
+        // normaliza numéricos
+        obj.volumes   = +obj.volumes || 0;
+        obj.pesoLiq   = +obj.pesoLiq || 0;
+        obj.pesoBruto = +obj.pesoBruto || 0;
+        obj.dimL      = +obj.dimL || 0;
+        obj.dimA      = +obj.dimA || 0;
+        obj.dimC      = +obj.dimC || 0;
+        return obj;
+      });
+
+      const data = {
+        nfeNumero: els.nfeNumero.value.trim(),
+        nfeData: els.nfeData.value,
+        remessaNumero: els.remessaNumero.value.trim(),
+        faturamento: els.faturamento.value.trim(),
+        comprador: els.comprador.value.trim(),
+        recebedor: els.recebedor.value.trim(),
+        remetente: empresas[els.remetenteSelect.value] || {},
+        itens,
+        totais: {
+          volumes: +els.totalVolumes.textContent || 0,
+          pesoLiq: +(els.totalLiq.textContent || "0"),
+          pesoBruto: +(els.totalBruto.textContent || "0"),
+        },
+        criadoEm: serverTimestamp()
+      };
+
+      try{
+        await addDoc(collection(db,'romaneios'), data);
+        alert('Romaneio salvo no Firestore!');
+        carregarRomaneios();
+      }catch(e){
+        console.error(e);
+        alert('Erro ao salvar no Firestore.');
+      }
+    });
+
+    // ====== LISTAR SALVOS (com botão imprimir)
+    async function carregarRomaneios(){
+      els.listaRomaneios.innerHTML = '<tr><td colspan="2">Carregando...</td></tr>';
+      try{
+        const qy = query(collection(db,'romaneios'), orderBy('criadoEm','desc'));
+        const snap = await getDocs(qy);
+        if(snap.empty){
+          els.listaRomaneios.innerHTML = '<tr><td colspan="2" style="text-align:center">Nenhum romaneio salvo</td></tr>';
+          return;
+        }
+        els.listaRomaneios.innerHTML = '';
+        snap.forEach(doc=>{
+          const data = doc.data();
+          const tr = document.createElement('tr');
+
+          const tdInfo = document.createElement('td');
+          tdInfo.innerHTML = `
+            <div><strong>NFe:</strong> ${data.nfeNumero||''} • <strong>Data:</strong> ${data.nfeData||''}</div>
+            <div class="muted" style="font-size:12px">${(data.remetente?.nome)||''} – ${data.comprador?.split?.('\n')?.[0]||''}</div>
+          `;
+
+          const tdAcoes = document.createElement('td');
+          const btnImp = document.createElement('button');
+          btnImp.className='btn secondary';
+          btnImp.textContent='Imprimir';
+          btnImp.addEventListener('click', ()=> imprimirRomaneioHTML(data));
+          tdAcoes.appendChild(btnImp);
+
+          tr.appendChild(tdInfo);
+          tr.appendChild(tdAcoes);
+          els.listaRomaneios.appendChild(tr);
+        });
+      }catch(e){
+        console.error(e);
+        els.listaRomaneios.innerHTML = '<tr><td colspan="2">Erro ao carregar</td></tr>';
+      }
+    }
+
+    els.recarregar?.addEventListener('click', carregarRomaneios);
+    carregarRomaneios();
+
+    // ====== IMPRESSÃO (mantém layout)
+    // ====== IMPRESSÃO (mantém layout)
+function getSiglaImpressao(nomeEmpresa) {
+  if (nomeEmpresa?.toUpperCase().includes('MARIA DIVINA')) return 'MD';
+  if (nomeEmpresa?.toUpperCase().includes('JPL')) return 'JPL';
+  return nomeEmpresa || '';
+}
+
+function cloneToPrint(data) {
+  const card = document.getElementById('card-romaneio').cloneNode(true);
+
+  // Preenche cabeçalho
+  card.querySelector('#nfeNumero').value = data?.nfeNumero || els.nfeNumero.value || '';
+  card.querySelector('#nfeData').value = data?.nfeData || els.nfeData.value || '';
+  card.querySelector('#remessaNumero').value = data?.remessaNumero || els.remessaNumero.value || '';
+  card.querySelector('#faturamento').value = data?.faturamento || els.faturamento.value || '';
+  card.querySelector('#comprador').value = data?.comprador || els.comprador.value || '';
+  card.querySelector('#recebedor').value = data?.recebedor || els.recebedor.value || '';
+
+  // ====== Remetente (logo/nome/endereço/tel)
+  const empresaNome = data?.remetente?.nome || els.remetenteSelect.value;
+  const sigla = getSiglaImpressao(empresaNome);
+  const remetenteAtual = Object.values(empresas).find(e => e.nome === empresaNome) || {};
+
+  card.querySelector('#remetenteLogo').textContent = sigla;
+  card.querySelector('#remetenteEndereco').textContent = (remetenteAtual.nome || empresaNome) + ' — ' + (remetenteAtual.endereco || '');
+  card.querySelector('#remetenteTel').textContent = remetenteAtual.telefone ? 'Tel: ' + remetenteAtual.telefone : '';
+
+  // Tabela de itens
+  const tbody = card.querySelector('#itensTable tbody');
+  tbody.innerHTML = '';
+  const items = data?.itens?.length
+    ? data.itens
+    : Array.from(els.itensTable.querySelectorAll('tr')).map(tr => {
+        const obj = {};
+        tr.querySelectorAll('[data-field]').forEach(i => obj[i.dataset.field] = i.value);
+        return obj;
+      });
+
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.produto || ''}</td>
+      <td>${item.cod || ''}</td>
+      <td>${item.descricao || ''}</td>
+      <td>${item.lote || ''}</td>
+      <td>${item.tipo || ''}</td>
+      <td>${item.volumes || 0}</td>
+      <td>${item.um || ''}</td>
+      <td>${item.pesoLiq || 0}</td>
+      <td>${item.pesoBruto || 0}</td>
+      <td>${item.dimL || 0}</td>
+      <td>${item.dimA || 0}</td>
+      <td>${item.dimC || 0}</td>
+      <td></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Totais
+  const tv = items.reduce((a, i) => a + (+i.volumes || 0), 0);
+  const tl = items.reduce((a, i) => a + (+i.pesoLiq || 0), 0).toFixed(2);
+  const tb = items.reduce((a, i) => a + (+i.pesoBruto || 0), 0).toFixed(2);
+  card.querySelector('#totalVolumes').textContent = tv;
+  card.querySelector('#totalLiq').textContent = tl;
+  card.querySelector('#totalBruto').textContent = tb;
+
+  // Substitui inputs/textarea/select por divs mantendo layout
+  card.querySelectorAll('input, textarea, select, .actions, .row-actions').forEach(el => {
+    if (el.classList?.contains('actions') || el.classList?.contains('row-actions')) { el.remove(); return; }
+    if (el.tagName === 'SELECT') {
+      const div = document.createElement('div');
+      div.textContent = el.value;
+      const st = getComputedStyle(el);
+      div.style.border = st.border; div.style.padding = st.padding; div.style.borderRadius = st.borderRadius;
+      div.style.background = st.background; div.style.fontSize = st.fontSize; div.style.fontFamily = st.fontFamily;
+      div.style.minHeight = st.height; div.style.boxSizing = 'border-box';
+      el.replaceWith(div);
+      return;
+    }
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      const div = document.createElement('div');
+      div.textContent = el.value;
+      const st = getComputedStyle(el);
+      div.style.border = st.border; div.style.padding = st.padding; div.style.borderRadius = st.borderRadius;
+      div.style.background = st.background; div.style.fontSize = st.fontSize; div.style.fontFamily = st.fontFamily;
+      div.style.minHeight = st.height; div.style.boxSizing = 'border-box'; div.style.whiteSpace = 'pre-wrap';
+      el.replaceWith(div);
+    }
+  });
+
+  return card;
+}
+z
+
+    
+
+    function abrirJanelaImpressao(card){
+      const w = window.open();
+      w.document.write('<html><head><title>Romaneio</title>');
+      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+                        .map(s => s.outerHTML).join('');
+      w.document.write(styles);
+      w.document.write('</head><body>');
+      w.document.write(card.outerHTML);
+      w.document.write('</body></html>');
+      w.document.close();
+      w.focus();
+      w.print();
+      w.close();
+    }
+
+    function imprimirRomaneioHTML(data){
+      const card = cloneToPrint(data);
+      abrirJanelaImpressao(card);
+    }
+
+    // Botão imprimir do formulário atual
+    els.printRomaneio.addEventListener('click', ()=>{
+      imprimirRomaneioHTML(); // imprime o que está na tela
+    });
+
+    
   </script>
 </body>
 </html>
+
