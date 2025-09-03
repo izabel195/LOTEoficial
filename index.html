@@ -104,7 +104,7 @@
           <div class="logo" id="remetenteLogo" style="width:56px;height:56px;border-radius:14px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:800">MD</div>
           <div>
             <select id="remetenteSelect" style="width:100%;padding:6px;font-weight:600;">
-              <option value="">MARIA DIVINA AEROPIPA</option>
+              <option value="MARIA DIVINA AEROPIPA">MARIA DIVINA AEROPIPA</option>
               <option value="JPL">JPL</option>
             </select>
             <div class="muted" id="remetenteEndereco" style="font-size:13px">R. Jacirendi, 574, Anexo 582 — Tatuapé — São Paulo/SP — 03080-000</div>
@@ -394,11 +394,12 @@
 
     // ====== REMETENTE (logo/endereço/tel)
     els.remetenteSelect.addEventListener('change', ()=>{
-      const r = empresas[els.remetenteSelect.value];
+      const empresaSelecionada = els.remetenteSelect.value;
+      const r = empresas[empresaSelecionada];
       if(r){
-        els.remetenteLogo.textContent=r.logo;
-        els.remetenteEndereco.textContent=r.endereco;
-        els.remetenteTel.textContent='Tel: '+r.telefone;
+        els.remetenteLogo.textContent = r.logo;
+        els.remetenteEndereco.textContent = r.endereco;
+        els.remetenteTel.textContent = 'Tel: ' + r.telefone;
       }
     });
 
@@ -463,6 +464,22 @@
         const recebedorNome = tx(xml, ["entrega > xNome","infNFe > entrega > xNome"]);
         els.recebedor.value = recebedorNome || "";
 
+        // Nome da empresa (remetente) - extrair do XML
+        const remetenteNome = tx(xml, ["emit > xNome","infNFe > emit > xNome"]);
+        if (remetenteNome) {
+          // Verificar se o nome da empresa existe no nosso objeto empresas
+          const empresaEncontrada = Object.keys(empresas).find(key => 
+            remetenteNome.toUpperCase().includes(key.toUpperCase())
+          );
+          
+          if (empresaEncontrada) {
+            els.remetenteSelect.value = empresaEncontrada;
+            // Disparar evento change para atualizar logo e endereço
+            const event = new Event('change');
+            els.remetenteSelect.dispatchEvent(event);
+          }
+        }
+
         // Itens
         els.itensTable.innerHTML = "";
         const dets = parseItems(xml);
@@ -478,17 +495,21 @@
           
           // Obter peso bruto do XML
           const pesoBruto = prod?.querySelector('pesoB')?.textContent || "0";
+          
+          // Obter peso líquido do XML
+          const pesoLiq = prod?.querySelector('pesoL')?.textContent || "0";
 
           // Converter quantidade para caixas se necessário
           const quantidadeConvertida = converterParaCaixas(qCom);
 
-          tr.querySelector('[data-field="produto"]').value   = "OUTRO";
+          // Preencher com dados do XML
+          tr.querySelector('[data-field="produto"]').value   = xProd; // Nome do produto do XML
           tr.querySelector('[data-field="cod"]').value       = cProd;
           tr.querySelector('[data-field="descricao"]').value = ncm;
           tr.querySelector('[data-field="volumes"]').value   = quantidadeConvertida.valor;
           tr.querySelector('[data-field="um"]').value        = quantidadeConvertida.unidade;
-          tr.querySelector('[data-field="pesoLiq"]').value   = vProd;
-          tr.querySelector('[data-field="pesoBruto"]').value = pesoBruto;
+          tr.querySelector('[data-field="pesoLiq"]').value   = pesoLiq; // Peso líquido do XML
+          tr.querySelector('[data-field="pesoBruto"]').value = pesoBruto; // Peso bruto do XML
 
           // Lote e dimensões ficam para preenchimento manual
           tr.querySelector('[data-field="lote"]').value = "";
@@ -656,30 +677,6 @@
           pesoBruto: 0
         }
       };
-      // FUNÇÃO PARA CONVERTER QUANTIDADE EM CAIXAS (CADA 1000 UN = 1 CXS)
-function converterParaCaixas(quantidade, unidadeAtual) {
-  // Se já estiver em CXS, não converter
-  if (unidadeAtual === 'CXS') {
-    return {
-      valor: quantidade,
-      unidade: 'CXS'
-    };
-  }
-  
-  // Se a quantidade for múltipla de 1000, converter para CXS
-  if (quantidade >= 1000 && quantidade % 10000 === 1) {
-    return {
-      valor: (quantidade / 1000),
-      unidade: 'CXS'
-    };
-  }
-  
-  // Caso contrário, manter como está
-  return {
-    valor: quantidade,
-    unidade: unidadeAtual || 'UN'
-  };
-}
 
       // Coletar dados dos itens
       const itemInputs = document.querySelectorAll('#editItensContainer [data-item-index]');
@@ -818,12 +815,6 @@ function converterParaCaixas(quantidade, unidadeAtual) {
     carregarRomaneios();
 
     // ====== IMPRESSÃO (mantém layout)
-    function getSiglaImpressao(nomeEmpresa) {
-      if (nomeEmpresa?.toUpperCase().includes('MARIA DIVINA')) return 'MD';
-      if (nomeEmpresa?.toUpperCase().includes('JPL')) return 'JPL';
-      return nomeEmpresa || '';
-    }
-
     function cloneToPrint(data) {
       const card = document.getElementById('card-romaneio').cloneNode(true);
 
@@ -837,11 +828,19 @@ function converterParaCaixas(quantidade, unidadeAtual) {
 
       // ====== Remetente (logo/nome/endereço/tel)
       const empresaNome = data?.remetente?.nome || els.remetenteSelect.value;
-      const sigla = getSiglaImpressao(empresaNome);
-      const remetenteAtual = Object.values(empresas).find(e => e.nome === empresaNome) || {};
-
-      card.querySelector('#remetenteLogo').textContent = sigla;
-      card.querySelector('#remetenteEndereco').textContent = (remetenteAtual.nome || empresaNome) + ' — ' + (remetenteAtual.endereco || '');
+      const remetenteAtual = empresas[empresaNome] || {};
+      
+      // Atualiza o nome da empresa no cabeçalho - substitui o select por um div com o nome
+      const remetenteSelect = card.querySelector('#remetenteSelect');
+      const nomeEmpresaDiv = document.createElement('div');
+      nomeEmpresaDiv.textContent = empresaNome;
+      nomeEmpresaDiv.style.fontWeight = '600';
+      nomeEmpresaDiv.style.padding = '6px';
+      remetenteSelect.parentNode.replaceChild(nomeEmpresaDiv, remetenteSelect);
+      
+      // Atualiza logo, endereço e telefone
+      card.querySelector('#remetenteLogo').textContent = remetenteAtual.logo || 'MD';
+      card.querySelector('#remetenteEndereco').textContent = remetenteAtual.endereco || '';
       card.querySelector('#remetenteTel').textContent = remetenteAtual.telefone ? 'Tel: ' + remetenteAtual.telefone : '';
 
       // Tabela de itens
@@ -891,7 +890,7 @@ function converterParaCaixas(quantidade, unidadeAtual) {
         }
         if (el.tagName === 'SELECT') {
           const div = document.createElement('div');
-          div.textContent = el.value;
+          div.textContent = el.options[el.selectedIndex].text;
           const st = getComputedStyle(el);
           div.style.border = st.border; 
           div.style.padding = st.padding; 
