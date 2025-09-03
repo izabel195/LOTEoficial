@@ -49,6 +49,7 @@
     }
     .btn.secondary{background:#fff;color:var(--fg);border-color:var(--line)}
     .btn.ghost{background:transparent;color:var(--brand);border-color:var(--brand)}
+    .btn.small{font-size:12px;padding:6px 10px}
     .btn:disabled{opacity:.5;cursor:not-allowed}
     table{width:100%;border-collapse:collapse}
     th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left;font-size:14px}
@@ -61,6 +62,15 @@
     .actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
     .actions.end{justify-content:flex-end;margin-top:14px}
     .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+    .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100}
+    .modal-content{background:#fff;padding:20px;border-radius:12px;max-width:90%;width:100%;max-height:90vh;overflow-y:auto}
+    .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+    .modal-section{margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--line)}
+    .edit-item-row{border-bottom:1px solid #eee;padding:10px 0}
+    .edit-item-row:last-child{border-bottom:none}
+    .edit-table {width:100%;border-collapse:collapse;margin-top:10px}
+    .edit-table th, .edit-table td {padding:8px;border:1px solid #ddd}
+    .edit-table input, .edit-table select {width:100%;padding:6px;border:1px solid #ccc;border-radius:4px}
 
     /* ===== Layout impressão ===== */
     @media print {
@@ -93,7 +103,6 @@
         <div style="display:flex;gap:12px;align-items:center">
           <div class="logo" id="remetenteLogo" style="width:56px;height:56px;border-radius:14px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:800">MD</div>
           <div>
-            <!-- ALTERAÇÃO AQUI: value corresponde à chave do objeto empresas -->
             <select id="remetenteSelect" style="width:100%;padding:6px;font-weight:600;">
               <option value="">MARIA DIVINA AEROPIPA</option>
               <option value="JPL">JPL</option>
@@ -181,13 +190,37 @@
   <!-- Template item -->
   <template id="tpl-item">
     <tr data-visible="yes">
-      <td><input placeholder="Produto" data-field="produto"/></td>
+      <td>
+        <select data-field="produto" class="produto-select">
+          <option value="">Selecione um produto</option>
+          <option value="Copo 80ml">Copo 80ml</option>
+          <option value="Copo 100ml">Copo 100ml</option>
+          <option value="Copo 220ml">Copo 220ml</option>
+          <option value="Copo 300ml">Copo 300ml</option>
+          <option value="Copo 400ml">Copo 400ml</option>
+          <option value="Copo 500ml">Copo 500ml</option>
+          <option value="Pote 100ml">Pote 100ml</option>
+          <option value="Pote 250ml">Pote 250ml</option>
+          <option value="Pote 590ml">Pote 590ml</option>
+          <option value="Pote 920ml">Pote 920ml</option>
+          <option value="CANUDO 10x210mm">CANUDO 10x210mm</option>
+          <option value="CANUDO 10x298mm">CANUDO 10x298mm</option>
+          <option value="CANUDO 08x210mm">CANUDO 08x210mm</option>
+          <option value="CANUDO 08x110mm">CANUDO 08x110mm</option>
+          <option value="CANUDO 05x240mm">CANUDO 05x240mm</option>
+          <option value="CANUDO 05x197mm">CANUDO 05x197mm</option>
+          <option value="SOLAPA 12">SOLAPA 12</option>
+          <option value="SOLAPA 22">SOLAPA 22</option>
+          <option value="CAIXA S/ INFO">CAIXA S/ INFO</option>
+          <option value="OUTRO">OUTRO (personalizar)</option>
+        </select>
+      </td>
       <td><input placeholder="Cód" data-field="cod"/></td>
       <td><input placeholder="Descrição" data-field="descricao"/></td>
       <td><input placeholder="Lote" data-field="lote"/></td>
       <td><input placeholder="Tipo" data-field="tipo"/></td>
       <td><input type="number" min="0" step="1" value="0" data-field="volumes"/></td>
-      <td><select data-field="um"><option>KG</option><option>UN</option><option>PC</option></select></td>
+      <td><select data-field="um"><option>KG</option><option>UN</option><option>PC</option><option>CXS</option></select></td>
       <td><input type="number" min="0" step="0.01" value="0" data-field="pesoLiq"/></td>
       <td><input type="number" min="0" step="0.01" value="0" data-field="pesoBruto"/></td>
       <td><input type="number" min="0" step="0.01" value="0" data-field="dimL"/></td>
@@ -199,14 +232,28 @@
       </td>
     </tr>
   </template>
+
+  <!-- Modal de edição -->
+  <div id="editModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <h3>Editar Romaneio</h3>
+      <div id="modalForm"></div>
+      <div class="modal-actions">
+        <button class="btn secondary" id="cancelEdit">Cancelar</button>
+        <button class="btn" id="saveEdit">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase SDK + App -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { 
-      getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp 
+      getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp,
+      doc, updateDoc, deleteDoc
     } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-    // === SEU CONFIG (o mesmo que você enviou) ===
+    // === CONFIGURAÇÃO DO FIREBASE ===
     const firebaseConfig = {
       apiKey: "AIzaSyCse9Zq2XdjUwN91pzNxF5pItSVR9b2fJ8",
       authDomain: "lote-de-pido.firebaseapp.com",
@@ -225,10 +272,30 @@
       'MARIA DIVINA AEROPIPA': { nome:'MARIA DIVINA AEROPIPA', endereco:'R. Jacirendi, 574, Anexo 582 — Tatuapé — São Paulo/SP — 03080-000', telefone:'11 94024-0545', logo:'MD' },
       'JPL': { nome:'JPL', endereco:'R. Jacirendi, 574, Anexo 582 — Tatuapé — São Paulo/SP — 03080-000', telefone:'11 12345-6789', logo:'JPL' }
     };
-    
-         
-    
 
+    // Dados de dimensões automáticas
+    const dimensoesProdutos = {
+      'Copo 80ml': { L: 23.5, A: 29.5, C: 35 },
+      'Copo 100ml': { L: 32.05, A: 27, C: 39 },
+      'Copo 220ml': { L: 37, A: 28, C: 39.5 },
+      'Copo 300ml': { L: 40, A: 32.5, C: 40 },
+      'Copo 400ml': { L: 37, A: 46, C: 51.3 },
+      'Copo 500ml': { L: 0, A: 0, C: 0 },
+      'Pote 100ml': { L: 35.5, A: 21.5, C: 38 },
+      'Pote 250ml': { L: 47, A: 38, C: 48 },
+      'Pote 590ml': { L: 50.5, A: 38.5, C: 33.5 },
+      'Pote 920ml': { L: 0, A: 0, C: 0 },
+      'CANUDO 10x210mm': { L: 56, A: 25, C: 25 },
+      'CANUDO 10x298mm': { L: 67, A: 37, C: 32 },
+      'CANUDO 08x210mm': { L: 36, A: 25, C: 25 },
+      'CANUDO 08x110mm': { L: 36, A: 21, C: 24 },
+      'CANUDO 05x240mm': { L: 36, A: 22, C: 29 },
+      'CANUDO 05x197mm': { L: 37, A: 21, C: 24 },
+      'SOLAPA 12': { L: 32, A: 15, C: 21 },
+      'SOLAPA 22': { L: 30, A: 28, C: 21 },
+      'CAIXA S/ INFO': { L: 50.5, A: 37.5, C: 47 }
+    };
+    
     // ====== ELEMENTOS
     const els = {
       card: document.getElementById('card-romaneio'),
@@ -254,7 +321,14 @@
       totalVolumes: document.getElementById('totalVolumes'),
       totalLiq: document.getElementById('totalLiq'),
       totalBruto: document.getElementById('totalBruto'),
+      editModal: document.getElementById('editModal'),
+      modalForm: document.getElementById('modalForm'),
+      cancelEdit: document.getElementById('cancelEdit'),
+      saveEdit: document.getElementById('saveEdit')
     };
+
+    // Variável para armazenar o documento atual sendo editado
+    let currentEditDoc = null;
 
     // ====== FUNÇÕES DE TABELA / TOTAIS
     function atualizarTotais(){
@@ -269,10 +343,34 @@
       els.totalBruto.textContent = bruto.toFixed(2);
     }
 
+    function aplicarDimensoesAutomáticas(selectElement) {
+      const tr = selectElement.closest('tr');
+      const produto = selectElement.value;
+      
+      if (dimensoesProdutos[produto]) {
+        const dims = dimensoesProdutos[produto];
+        tr.querySelector('[data-field="dimL"]').value = dims.L;
+        tr.querySelector('[data-field="dimA"]').value = dims.A;
+        tr.querySelector('[data-field="dimC"]').value = dims.C;
+      }
+    }
+
     function criarItem(){
       const clone = els.tplItem.content.cloneNode(true);
       const tr = clone.querySelector('tr');
-      tr.querySelectorAll('input,select').forEach(inp=>{ inp.addEventListener('input', atualizarTotais); });
+      
+      // Adicionar evento para aplicar dimensões automáticas
+      const produtoSelect = tr.querySelector('.produto-select');
+      produtoSelect.addEventListener('change', function() {
+        aplicarDimensoesAutomáticas(this);
+      });
+      
+      tr.querySelectorAll('input,select').forEach(inp=>{ 
+        if (!inp.classList.contains('produto-select')) {
+          inp.addEventListener('input', atualizarTotais); 
+        }
+      });
+      
       tr.querySelector('[data-action="del"]').addEventListener('click', ()=>{ tr.remove(); atualizarTotais(); });
       tr.querySelector('[data-action="dup"]').addEventListener('click', ()=>{ 
         const novo = criarItem();
@@ -282,6 +380,9 @@
           const tgt = novo.querySelector(`[data-field="${f}"]`);
           if(tgt) tgt.value = i.value;
         });
+        // copia também o valor do select de produto
+        const produtoVal = tr.querySelector('.produto-select').value;
+        novo.querySelector('.produto-select').value = produtoVal;
         atualizarTotais();
       });
       els.itensTable.appendChild(tr);
@@ -315,6 +416,20 @@
       if(dets.length) return dets;
       // fallback: procurar por qualquer nó chamado 'det'
       return xml.getElementsByTagName('det');
+    }
+
+    // FUNÇÃO PARA CONVERTER QUANTIDADE EM CAIXAS
+    function converterParaCaixas(quantidade) {
+      if (quantidade >= 1000) {
+        return {
+          valor: (quantidade / 1000).toFixed(3),
+          unidade: 'CXS'
+        };
+      }
+      return {
+        valor: quantidade,
+        unidade: 'UN'
+      };
     }
 
     els.uploadXML.addEventListener('change', function(e){
@@ -357,16 +472,23 @@
           const xProd = prod?.querySelector('xProd')?.textContent || "";
           const cProd = prod?.querySelector('cProd')?.textContent || "";
           const ncm   = prod?.querySelector('NCM')?.textContent || "";
-          const qCom  = prod?.querySelector('qCom')?.textContent || "0";
+          const qCom  = parseFloat(prod?.querySelector('qCom')?.textContent || "0");
           const uCom  = prod?.querySelector('uCom')?.textContent || "UN";
           const vProd = prod?.querySelector('vProd')?.textContent || "0";
+          
+          // Obter peso bruto do XML
+          const pesoBruto = prod?.querySelector('pesoB')?.textContent || "0";
 
-          tr.querySelector('[data-field="produto"]').value   = xProd;
+          // Converter quantidade para caixas se necessário
+          const quantidadeConvertida = converterParaCaixas(qCom);
+
+          tr.querySelector('[data-field="produto"]').value   = "OUTRO";
           tr.querySelector('[data-field="cod"]').value       = cProd;
           tr.querySelector('[data-field="descricao"]').value = ncm;
-          tr.querySelector('[data-field="volumes"]').value   = qCom;
-          tr.querySelector('[data-field="um"]').value        = uCom;
+          tr.querySelector('[data-field="volumes"]').value   = quantidadeConvertida.valor;
+          tr.querySelector('[data-field="um"]').value        = quantidadeConvertida.unidade;
           tr.querySelector('[data-field="pesoLiq"]').value   = vProd;
+          tr.querySelector('[data-field="pesoBruto"]').value = pesoBruto;
 
           // Lote e dimensões ficam para preenchimento manual
           tr.querySelector('[data-field="lote"]').value = "";
@@ -386,7 +508,11 @@
     els.salvarRomaneio.addEventListener('click', async ()=>{
       const itens = Array.from(els.itensTable.querySelectorAll('tr')).map(tr=>{
         const obj={};
-        tr.querySelectorAll('input, select').forEach(i=>obj[i.dataset.field]=i.value);
+        tr.querySelectorAll('input, select').forEach(i=>{
+          if (i.dataset.field) {
+            obj[i.dataset.field]=i.value;
+          }
+        });
         // normaliza numéricos
         obj.volumes   = +obj.volumes || 0;
         obj.pesoLiq   = +obj.pesoLiq || 0;
@@ -424,7 +550,199 @@
       }
     });
 
-    // ====== LISTAR SALVOS (com botão imprimir)
+    // ====== FUNÇÕES DE EDIÇÃO
+    function preencherFormularioEdicao(data) {
+      els.modalForm.innerHTML = `
+        <div class="modal-section">
+          <h4>Informações Principais</h4>
+          <div class="grid g2">
+            <div><label>Número NFE</label><input id="editNfeNumero" value="${data.nfeNumero || ''}" /></div>
+            <div><label>Data NFE</label><input id="editNfeData" type="date" value="${data.nfeData || ''}" /></div>
+          </div>
+          <div class="grid g2">
+            <div><label>Nº Remessa</label><input id="editRemessaNumero" value="${data.remessaNumero || ''}" /></div>
+            <div><label>Faturamento</label><input id="editFaturamento" value="${data.faturamento || ''}" /></div>
+          </div>
+          <div class="grid g2">
+            <div><label>Comprador</label><textarea id="editComprador">${data.comprador || ''}</textarea></div>
+            <div><label>Recebedor</label><textarea id="editRecebedor">${data.recebedor || ''}</textarea></div>
+          </div>
+        </div>
+        
+        <div class="modal-section">
+          <h4>Itens do Romaneio</h4>
+          <div class="table-wrap">
+            <table class="edit-table">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Código</th>
+                  <th>Descrição</th>
+                  <th>Lote</th>
+                  <th>Tipo</th>
+                  <th>Qtd</th>
+                  <th>UM</th>
+                  <th>Peso Liq</th>
+                  <th>Peso Bruto</th>
+                  <th>L (cm)</th>
+                  <th>A (cm)</th>
+                  <th>C (cm)</th>
+                </tr>
+              </thead>
+              <tbody id="editItensContainer"></tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      
+      // Preencher itens
+      const itensContainer = document.getElementById('editItensContainer');
+      itensContainer.innerHTML = '';
+      
+      if (data.itens && data.itens.length > 0) {
+        data.itens.forEach((item, index) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><input type="text" value="${item.produto || ''}" data-item-index="${index}" data-field="produto"></td>
+            <td><input type="text" value="${item.cod || ''}" data-item-index="${index}" data-field="cod"></td>
+            <td><input type="text" value="${item.descricao || ''}" data-item-index="${index}" data-field="descricao"></td>
+            <td><input type="text" value="${item.lote || ''}" data-item-index="${index}" data-field="lote"></td>
+            <td><input type="text" value="${item.tipo || ''}" data-item-index="${index}" data-field="tipo"></td>
+            <td><input type="number" value="${item.volumes || 0}" data-item-index="${index}" data-field="volumes"></td>
+            <td>
+              <select data-item-index="${index}" data-field="um">
+                <option value="KG" ${item.um === 'KG' ? 'selected' : ''}>KG</option>
+                <option value="UN" ${item.um === 'UN' ? 'selected' : ''}>UN</option>
+                <option value="PC" ${item.um === 'PC' ? 'selected' : ''}>PC</option>
+                <option value="CXS" ${item.um === 'CXS' ? 'selected' : ''}>CXS</option>
+              </select>
+            </td>
+            <td><input type="number" step="0.01" value="${item.pesoLiq || 0}" data-item-index="${index}" data-field="pesoLiq"></td>
+            <td><input type="number" step="0.01" value="${item.pesoBruto || 0}" data-item-index="${index}" data-field="pesoBruto"></td>
+            <td><input type="number" step="0.01" value="${item.dimL || 0}" data-item-index="${index}" data-field="dimL"></td>
+            <td><input type="number" step="0.01" value="${item.dimA || 0}" data-item-index="${index}" data-field="dimA"></td>
+            <td><input type="number" step="0.01" value="${item.dimC || 0}" data-item-index="${index}" data-field="dimC"></td>
+          `;
+          itensContainer.appendChild(tr);
+        });
+      } else {
+        itensContainer.innerHTML = '<tr><td colspan="12" style="text-align:center">Nenhum item encontrado</td></tr>';
+      }
+    }
+
+    async function abrirModalEdicao(docId, data) {
+      currentEditDoc = { id: docId, data: data };
+      preencherFormularioEdicao(data);
+      els.editModal.style.display = 'flex';
+    }
+
+    async function salvarEdicao() {
+      if (!currentEditDoc) return;
+      
+      // Coletar dados do formulário principal
+      const updatedData = {
+        nfeNumero: document.getElementById('editNfeNumero').value,
+        nfeData: document.getElementById('editNfeData').value,
+        remessaNumero: document.getElementById('editRemessaNumero').value,
+        faturamento: document.getElementById('editFaturamento').value,
+        comprador: document.getElementById('editComprador').value,
+        recebedor: document.getElementById('editRecebedor').value,
+        remetente: currentEditDoc.data.remetente,
+        // Coletar itens editados
+        itens: [],
+        totais: {
+          volumes: 0,
+          pesoLiq: 0,
+          pesoBruto: 0
+        }
+      };
+      // FUNÇÃO PARA CONVERTER QUANTIDADE EM CAIXAS (CADA 1000 UN = 1 CXS)
+function converterParaCaixas(quantidade, unidadeAtual) {
+  // Se já estiver em CXS, não converter
+  if (unidadeAtual === 'CXS') {
+    return {
+      valor: quantidade,
+      unidade: 'CXS'
+    };
+  }
+  
+  // Se a quantidade for múltipla de 1000, converter para CXS
+  if (quantidade >= 1000 && quantidade % 10000 === 1) {
+    return {
+      valor: (quantidade / 1000),
+      unidade: 'CXS'
+    };
+  }
+  
+  // Caso contrário, manter como está
+  return {
+    valor: quantidade,
+    unidade: unidadeAtual || 'UN'
+  };
+}
+
+      // Coletar dados dos itens
+      const itemInputs = document.querySelectorAll('#editItensContainer [data-item-index]');
+      const itemsByIndex = {};
+      
+      itemInputs.forEach(input => {
+        const index = input.getAttribute('data-item-index');
+        const field = input.getAttribute('data-field');
+        const value = input.value;
+        
+        if (!itemsByIndex[index]) {
+          itemsByIndex[index] = {};
+        }
+        
+        itemsByIndex[index][field] = value;
+      });
+      
+      // Processar itens e calcular totais
+      Object.values(itemsByIndex).forEach(item => {
+        // Converter valores numéricos
+        const volumes = parseFloat(item.volumes) || 0;
+        const pesoLiq = parseFloat(item.pesoLiq) || 0;
+        const pesoBruto = parseFloat(item.pesoBruto) || 0;
+        const dimL = parseFloat(item.dimL) || 0;
+        const dimA = parseFloat(item.dimA) || 0;
+        const dimC = parseFloat(item.dimC) || 0;
+        
+        // Adicionar ao array de itens
+        updatedData.itens.push({
+          produto: item.produto || '',
+          cod: item.cod || '',
+          descricao: item.descricao || '',
+          lote: item.lote || '',
+          tipo: item.tipo || '',
+          volumes: volumes,
+          um: item.um || 'UN',
+          pesoLiq: pesoLiq,
+          pesoBruto: pesoBruto,
+          dimL: dimL,
+          dimA: dimA,
+          dimC: dimC
+        });
+        
+        // Somar totais
+        updatedData.totais.volumes += volumes;
+        updatedData.totais.pesoLiq += pesoLiq;
+        updatedData.totais.pesoBruto += pesoBruto;
+      });
+
+      try {
+        const docRef = doc(db, 'romaneios', currentEditDoc.id);
+        await updateDoc(docRef, updatedData);
+        alert('Romaneio atualizado com sucesso!');
+        els.editModal.style.display = 'none';
+        carregarRomaneios();
+      } catch (e) {
+        console.error(e);
+        alert('Erro ao atualizar o romaneio.');
+      }
+    }
+    
+
+    // ====== LISTAR SALVOS (com botão imprimir e editar)
     async function carregarRomaneios(){
       els.listaRomaneios.innerHTML = '<tr><td colspan="2">Carregando...</td></tr>';
       try{
@@ -446,11 +764,37 @@
           `;
 
           const tdAcoes = document.createElement('td');
+          tdAcoes.style.display = 'flex';
+          tdAcoes.style.gap = '6px';
+          
           const btnImp = document.createElement('button');
-          btnImp.className='btn secondary';
+          btnImp.className='btn small secondary';
           btnImp.textContent='Imprimir';
           btnImp.addEventListener('click', ()=> imprimirRomaneioHTML(data));
+          
+          const btnEdit = document.createElement('button');
+          btnEdit.className='btn small';
+          btnEdit.textContent='Editar';
+          btnEdit.addEventListener('click', ()=> abrirModalEdicao(doc.id, data));
+          
+          const btnDel = document.createElement('button');
+          btnDel.className='btn small secondary';
+          btnDel.textContent='Excluir';
+          btnDel.addEventListener('click', async ()=> {
+            if(confirm('Tem certeza que deseja excluir este romaneio?')) {
+              try {
+                await deleteDoc(doc(db, 'romaneios', doc.id));
+                carregarRomaneios();
+              } catch (e) {
+                console.error(e);
+                alert('Erro ao excluir romaneio.');
+              }
+            }
+          });
+          
           tdAcoes.appendChild(btnImp);
+          tdAcoes.appendChild(btnEdit);
+          tdAcoes.appendChild(btnDel);
 
           tr.appendChild(tdInfo);
           tr.appendChild(tdAcoes);
@@ -462,105 +806,123 @@
       }
     }
 
+    // Event listeners para o modal de edição
+    els.cancelEdit.addEventListener('click', () => {
+      els.editModal.style.display = 'none';
+      currentEditDoc = null;
+    });
+    
+    els.saveEdit.addEventListener('click', salvarEdicao);
+
     els.recarregar?.addEventListener('click', carregarRomaneios);
     carregarRomaneios();
 
     // ====== IMPRESSÃO (mantém layout)
-    // ====== IMPRESSÃO (mantém layout)
-function getSiglaImpressao(nomeEmpresa) {
-  if (nomeEmpresa?.toUpperCase().includes('MARIA DIVINA')) return 'MD';
-  if (nomeEmpresa?.toUpperCase().includes('JPL')) return 'JPL';
-  return nomeEmpresa || '';
-}
+    function getSiglaImpressao(nomeEmpresa) {
+      if (nomeEmpresa?.toUpperCase().includes('MARIA DIVINA')) return 'MD';
+      if (nomeEmpresa?.toUpperCase().includes('JPL')) return 'JPL';
+      return nomeEmpresa || '';
+    }
 
-function cloneToPrint(data) {
-  const card = document.getElementById('card-romaneio').cloneNode(true);
+    function cloneToPrint(data) {
+      const card = document.getElementById('card-romaneio').cloneNode(true);
 
-  // Preenche cabeçalho
-  card.querySelector('#nfeNumero').value = data?.nfeNumero || els.nfeNumero.value || '';
-  card.querySelector('#nfeData').value = data?.nfeData || els.nfeData.value || '';
-  card.querySelector('#remessaNumero').value = data?.remessaNumero || els.remessaNumero.value || '';
-  card.querySelector('#faturamento').value = data?.faturamento || els.faturamento.value || '';
-  card.querySelector('#comprador').value = data?.comprador || els.comprador.value || '';
-  card.querySelector('#recebedor').value = data?.recebedor || els.recebedor.value || '';
+      // Preenche cabeçalho
+      card.querySelector('#nfeNumero').value = data?.nfeNumero || els.nfeNumero.value || '';
+      card.querySelector('#nfeData').value = data?.nfeData || els.nfeData.value || '';
+      card.querySelector('#remessaNumero').value = data?.remessaNumero || els.remessaNumero.value || '';
+      card.querySelector('#faturamento').value = data?.faturamento || els.faturamento.value || '';
+      card.querySelector('#comprador').value = data?.comprador || els.comprador.value || '';
+      card.querySelector('#recebedor').value = data?.recebedor || els.recebedor.value || '';
 
-  // ====== Remetente (logo/nome/endereço/tel)
-  const empresaNome = data?.remetente?.nome || els.remetenteSelect.value;
-  const sigla = getSiglaImpressao(empresaNome);
-  const remetenteAtual = Object.values(empresas).find(e => e.nome === empresaNome) || {};
+      // ====== Remetente (logo/nome/endereço/tel)
+      const empresaNome = data?.remetente?.nome || els.remetenteSelect.value;
+      const sigla = getSiglaImpressao(empresaNome);
+      const remetenteAtual = Object.values(empresas).find(e => e.nome === empresaNome) || {};
 
-  card.querySelector('#remetenteLogo').textContent = sigla;
-  card.querySelector('#remetenteEndereco').textContent = (remetenteAtual.nome || empresaNome) + ' — ' + (remetenteAtual.endereco || '');
-  card.querySelector('#remetenteTel').textContent = remetenteAtual.telefone ? 'Tel: ' + remetenteAtual.telefone : '';
+      card.querySelector('#remetenteLogo').textContent = sigla;
+      card.querySelector('#remetenteEndereco').textContent = (remetenteAtual.nome || empresaNome) + ' — ' + (remetenteAtual.endereco || '');
+      card.querySelector('#remetenteTel').textContent = remetenteAtual.telefone ? 'Tel: ' + remetenteAtual.telefone : '';
 
-  // Tabela de itens
-  const tbody = card.querySelector('#itensTable tbody');
-  tbody.innerHTML = '';
-  const items = data?.itens?.length
-    ? data.itens
-    : Array.from(els.itensTable.querySelectorAll('tr')).map(tr => {
-        const obj = {};
-        tr.querySelectorAll('[data-field]').forEach(i => obj[i.dataset.field] = i.value);
-        return obj;
+      // Tabela de itens
+      const tbody = card.querySelector('#itensTable tbody');
+      tbody.innerHTML = '';
+      const items = data?.itens?.length
+        ? data.itens
+        : Array.from(els.itensTable.querySelectorAll('tr')).map(tr => {
+            const obj = {};
+            tr.querySelectorAll('[data-field]').forEach(i => obj[i.dataset.field] = i.value);
+            return obj;
+          });
+
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.produto || ''}</td>
+          <td>${item.cod || ''}</td>
+          <td>${item.descricao || ''}</td>
+          <td>${item.lote || ''}</td>
+          <td>${item.tipo || ''}</td>
+          <td>${item.volumes || 0}</td>
+          <td>${item.um || ''}</td>
+          <td>${item.pesoLiq || 0}</td>
+          <td>${item.pesoBruto || 0}</td>
+          <td>${item.dimL || 0}</td>
+          <td>${item.dimA || 0}</td>
+          <td>${item.dimC || 0}</td>
+          <td></td>
+        `;
+        tbody.appendChild(tr);
       });
 
-  items.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${item.produto || ''}</td>
-      <td>${item.cod || ''}</td>
-      <td>${item.descricao || ''}</td>
-      <td>${item.lote || ''}</td>
-      <td>${item.tipo || ''}</td>
-      <td>${item.volumes || 0}</td>
-      <td>${item.um || ''}</td>
-      <td>${item.pesoLiq || 0}</td>
-      <td>${item.pesoBruto || 0}</td>
-      <td>${item.dimL || 0}</td>
-      <td>${item.dimA || 0}</td>
-      <td>${item.dimC || 0}</td>
-      <td></td>
-    `;
-    tbody.appendChild(tr);
-  });
+      // Totais
+      const tv = items.reduce((a, i) => a + (+i.volumes || 0), 0);
+      const tl = items.reduce((a, i) => a + (+i.pesoLiq || 0), 0).toFixed(2);
+      const tb = items.reduce((a, i) => a + (+i.pesoBruto || 0), 0).toFixed(2);
+      card.querySelector('#totalVolumes').textContent = tv;
+      card.querySelector('#totalLiq').textContent = tl;
+      card.querySelector('#totalBruto').textContent = tb;
 
-  // Totais
-  const tv = items.reduce((a, i) => a + (+i.volumes || 0), 0);
-  const tl = items.reduce((a, i) => a + (+i.pesoLiq || 0), 0).toFixed(2);
-  const tb = items.reduce((a, i) => a + (+i.pesoBruto || 0), 0).toFixed(2);
-  card.querySelector('#totalVolumes').textContent = tv;
-  card.querySelector('#totalLiq').textContent = tl;
-  card.querySelector('#totalBruto').textContent = tb;
+      // Substitui inputs/textarea/select por divs mantendo layout
+      card.querySelectorAll('input, textarea, select, .actions, .row-actions').forEach(el => {
+        if (el.classList?.contains('actions') || el.classList?.contains('row-actions')) { 
+          el.remove(); 
+          return; 
+        }
+        if (el.tagName === 'SELECT') {
+          const div = document.createElement('div');
+          div.textContent = el.value;
+          const st = getComputedStyle(el);
+          div.style.border = st.border; 
+          div.style.padding = st.padding; 
+          div.style.borderRadius = st.borderRadius;
+          div.style.background = st.background; 
+          div.style.fontSize = st.fontSize; 
+          div.style.fontFamily = st.fontFamily;
+          div.style.minHeight = st.height; 
+          div.style.boxSizing = 'border-box';
+          el.replaceWith(div);
+          return;
+        }
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          const div = document.createElement('div');
+          div.textContent = el.value;
+          const st = getComputedStyle(el);
+          div.style.border = st.border; 
+          div.style.padding = st.padding; 
+          div.style.borderRadius = st.borderRadius;
+          div.style.background = st.background; 
+          div.style.fontSize = st.fontSize; 
+          div.style.fontFamily = st.fontFamily;
+          div.style.minHeight = st.height; 
+          div.style.boxSizing = 'border-box'; 
+          div.style.whiteSpace = 'pre-wrap';
+          el.replaceWith(div);
+        }
+      });
 
-  // Substitui inputs/textarea/select por divs mantendo layout
-  card.querySelectorAll('input, textarea, select, .actions, .row-actions').forEach(el => {
-    if (el.classList?.contains('actions') || el.classList?.contains('row-actions')) { el.remove(); return; }
-    if (el.tagName === 'SELECT') {
-      const div = document.createElement('div');
-      div.textContent = el.value;
-      const st = getComputedStyle(el);
-      div.style.border = st.border; div.style.padding = st.padding; div.style.borderRadius = st.borderRadius;
-      div.style.background = st.background; div.style.fontSize = st.fontSize; div.style.fontFamily = st.fontFamily;
-      div.style.minHeight = st.height; div.style.boxSizing = 'border-box';
-      el.replaceWith(div);
-      return;
+      return card;
     }
-    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-      const div = document.createElement('div');
-      div.textContent = el.value;
-      const st = getComputedStyle(el);
-      div.style.border = st.border; div.style.padding = st.padding; div.style.borderRadius = st.borderRadius;
-      div.style.background = st.background; div.style.fontSize = st.fontSize; div.style.fontFamily = st.fontFamily;
-      div.style.minHeight = st.height; div.style.boxSizing = 'border-box'; div.style.whiteSpace = 'pre-wrap';
-      el.replaceWith(div);
-    }
-  });
-
-  return card;
-}
-z
-
-    
 
     function abrirJanelaImpressao(card){
       const w = window.open();
@@ -587,8 +949,8 @@ z
       imprimirRomaneioHTML(); // imprime o que está na tela
     });
 
-    
+    // Inicializar a lista de romaneios
+    carregarRomaneios();
   </script>
 </body>
 </html>
-
