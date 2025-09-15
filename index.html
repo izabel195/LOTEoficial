@@ -433,6 +433,28 @@
       };
     }
 
+    // FUNÇÃO PARA DISTRIBUIR PESO ENTRE OS ITENS
+    function distribuirPesoEntreItens(itens, pesoTotal) {
+      if (!itens.length || pesoTotal <= 0) return itens;
+      
+      // Calcular o total de unidades para distribuir proporcionalmente
+      const totalUnidades = itens.reduce((total, item) => total + parseFloat(item.volumes || 0), 0);
+      
+      if (totalUnidades <= 0) return itens;
+      
+      // Distribuir o peso proporcionalmente entre os itens
+      return itens.map(item => {
+        const proporcao = parseFloat(item.volumes || 0) / totalUnidades;
+        const pesoProporcional = (pesoTotal * proporcao).toFixed(2);
+        
+        return {
+          ...item,
+          pesoLiq: pesoProporcional,
+          pesoBruto: pesoProporcional
+        };
+      });
+    }
+
     els.uploadXML.addEventListener('change', function(e){
       const file = e.target.files?.[0];
       if(!file) return;
@@ -480,47 +502,71 @@
           }
         }
 
+        // Obter peso total da NFe
+        const pesoBrutoTotal = parseFloat(tx(xml, ["pesoB", "total pesoB", "infNFe total pesoB"]) || "0");
+        const pesoLiqTotal = parseFloat(tx(xml, ["pesoL", "total pesoL", "infNFe total pesoL"]) || "0");
+        
+        // Usar o maior peso disponível (bruto ou líquido)
+        const pesoTotal = pesoBrutoTotal > 0 ? pesoBrutoTotal : pesoLiqTotal;
+
         // Itens
         els.itensTable.innerHTML = "";
         const dets = parseItems(xml);
-        Array.from(dets).forEach(det=>{
+        
+        // Primeiro, coletar todos os itens
+        const itensColetados = Array.from(dets).map(det => {
           const prod = det.querySelector('prod');
-          const tr = criarItem();
           const xProd = prod?.querySelector('xProd')?.textContent || "";
           const cProd = prod?.querySelector('cProd')?.textContent || "";
           const ncm   = prod?.querySelector('NCM')?.textContent || "";
           const qCom  = parseFloat(prod?.querySelector('qCom')?.textContent || "0");
           const uCom  = prod?.querySelector('uCom')?.textContent || "UN";
-          const vProd = prod?.querySelector('vProd')?.textContent || "0";
           
-          // Obter peso bruto do XML
-          const pesoBruto = prod?.querySelector('pesoB')?.textContent || "0";
-          
-          // Obter peso líquido do XML
-          const pesoLiq = prod?.querySelector('pesoL')?.textContent || "0";
-
           // Converter quantidade para caixas se necessário
           const quantidadeConvertida = converterParaCaixas(qCom);
 
+          return {
+            produto: xProd,
+            cod: cProd,
+            descricao: xProd, // Usar a descrição do produto (xProd) em vez do NCM
+            volumes: quantidadeConvertida.valor,
+            um: quantidadeConvertida.unidade,
+            lote: "",
+            tipo: "",
+            pesoLiq: 0,
+            pesoBruto: 0,
+            dimL: 0,
+            dimA: 0,
+            dimC: 0
+          };
+        });
+
+        // Distribuir o peso total entre os itens
+        const itensComPeso = distribuirPesoEntreItens(itensColetados, pesoTotal);
+
+        // Adicionar itens à tabela
+        itensComPeso.forEach(item => {
+          const tr = criarItem();
+          
           // Preencher com dados do XML
-          tr.querySelector('[data-field="produto"]').value   = xProd; // Nome do produto do XML
-          tr.querySelector('[data-field="cod"]').value       = cProd;
-          tr.querySelector('[data-field="descricao"]').value = ncm;
-          tr.querySelector('[data-field="volumes"]').value   = quantidadeConvertida.valor;
-          tr.querySelector('[data-field="um"]').value        = quantidadeConvertida.unidade;
-          tr.querySelector('[data-field="pesoLiq"]').value   = pesoLiq; // Peso líquido do XML
-          tr.querySelector('[data-field="pesoBruto"]').value = pesoBruto; // Peso bruto do XML
+          tr.querySelector('[data-field="produto"]').value   = item.produto;
+          tr.querySelector('[data-field="cod"]').value       = item.cod;
+          tr.querySelector('[data-field="descricao"]').value = item.descricao; // Descrição do produto
+          tr.querySelector('[data-field="volumes"]').value   = item.volumes;
+          tr.querySelector('[data-field="um"]').value        = item.um;
+          tr.querySelector('[data-field="pesoLiq"]').value   = item.pesoLiq;
+          tr.querySelector('[data-field="pesoBruto"]').value = item.pesoBruto;
 
           // Lote e dimensões ficam para preenchimento manual
-          tr.querySelector('[data-field="lote"]').value = "";
-          tr.querySelector('[data-field="tipo"]').value = "";
-          tr.querySelector('[data-field="dimL"]').value = "";
-          tr.querySelector('[data-field="dimA"]').value = "";
-          tr.querySelector('[data-field="dimC"]').value = "";
+          tr.querySelector('[data-field="lote"]').value = item.lote;
+          tr.querySelector('[data-field="tipo"]').value = item.tipo;
+          tr.querySelector('[data-field="dimL"]').value = item.dimL;
+          tr.querySelector('[data-field="dimA"]').value = item.dimA;
+          tr.querySelector('[data-field="dimC"]').value = item.dimC;
         });
 
         atualizarTotais();
-        alert("XML importado com sucesso!");
+        alert("XML importado com sucesso! O peso total foi distribuído entre os itens.");
       };
       reader.readAsText(file);
     });
